@@ -1,6 +1,6 @@
 # Transformer-based Chinese Sentiment Classification (From Scratch) 🚀
 
-这是一个深入探索 Transformer 架构在中文语义理解中应用研究项目。本项目旨在通过**全流程自研**（从分词算法到底层架构优化），研究模型在处理真实世界复杂评论数据时的内在逻辑。
+这是一个探索 Transformer 架构在中文语义理解中应用研究项目（二分判断情绪积极 or 消极）。本项目旨在通过**全流程自研**（从分词算法到底层架构优化），研究模型在处理真实世界复杂评论数据时的内在逻辑。
 
 ## 🧪 项目核心愿景
 *   **透视底层细节**：手动实现 Transformer Encoder。
@@ -62,3 +62,4 @@ pip install torch pandas numpy tqdm
 ---
 ## 📄 License
 MIT License. 欢迎在该项目基础上进行二次实验与学术研究。
+
