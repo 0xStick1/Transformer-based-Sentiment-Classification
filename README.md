@@ -1,4 +1,4 @@
-# Transformer-based Chinese Sentiment Classification 🚀
+# Transformer-based Chinese Sentiment Classification (From Scratch) 🚀
 
 这是一个深入探索 Transformer 架构在中文语义理解中应用研究项目。本项目旨在通过**全流程自研**（从分词算法到底层架构优化），研究模型在处理真实世界复杂评论数据时的内在逻辑。
 
@@ -33,7 +33,7 @@
 *   **Encoder LR**: `1e-5` (保护特征提取能力)
 *   **Classification Head LR**: `1e-4` (加速下游任务适配)
 
-### 2. 多领域数据集挑战
+### 2. 多领域数据集
 本项目使用全量 `online_shopping_10_cats` 评论数据。模型需要同时处理书籍、手机、生活用品等 10 个领域的语言风格，对模型的跨领域特征提取能力提出了极高要求。
 
 ---
@@ -55,11 +55,10 @@ pip install torch pandas numpy tqdm
 ```
 
 ### 训练/使用
-1.  **预训练基石**：`python pretrain.py` (获取具备语义常识的 Encoder)
-2.  **情感对齐**：`python finetune.py` (获取 SWA 加持的分类模型)
+1.  **预训练**：`python pretrain.py` (获取具备语义常识的 Encoder)
+2.  **情感微调**：`python finetune.py` (获取 SWA 加持的分类模型)
 3.  **人机交互测试**：`python predict_finetuned.py`（非自己训练请从 Releases 页面下载预训练好的权重，并放至项目根目录下）
 
 ---
 ## 📄 License
 MIT License. 欢迎在该项目基础上进行二次实验与学术研究。
-
