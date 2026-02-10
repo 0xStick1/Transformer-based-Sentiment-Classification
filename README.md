@@ -57,7 +57,7 @@ pip install torch pandas numpy tqdm
 ### 生产流水线
 1.  **预训练基石**：`python pretrain.py` (获取具备语义常识的 Encoder)
 2.  **情感对齐**：`python finetune.py` (获取 SWA 加持的分类模型)
-3.  **人机交互测试**：`python predict_finetuned.py`
+3.  **人机交互测试**：`python predict_finetuned.py`（非自己训练请从 Releases 页面下载预训练好的权重，并放至项目根目录下）
 
 ---
 ## 📄 License
