@@ -205,3 +205,21 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# PyTorch/Models
+*.bin
+*.pt
+*.pth
+pretrained_encoder.bin
+best_model_finetuned.bin
+
+# Data
+*.csv
+*.json
+!vocab_bpe.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
