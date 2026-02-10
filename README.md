@@ -42,7 +42,7 @@
 
 *   `model_scratch.py`: 核心架构定义。实现了 **Pre-Norm** Transformer 块与 **[CLS]** 逻辑。
 *   `tokenizer_bpe.py`: 硬核分词引擎。实现了一种能够处理中文字符偏移的子词合并算法。
-*   `pretrain.py`: MLM 预训练流水线。包括动态权重衰减与 Cosine Warmup 策略。
+*   `pretrain.py`: MLM 预训练。包括动态权重衰减与 Cosine Warmup 策略。
 *   `finetune.py`: 高级微调引擎。集成了 **SWA** 与差分学习率优化逻辑。
 
 ---
