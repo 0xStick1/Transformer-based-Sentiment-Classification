@@ -1,9 +1,9 @@
 # Transformer-based Chinese Sentiment Classification (From Scratch) 🚀
 
-这是一个深入探索 Transformer 架构在中文语义理解中应用研究项目。不同于直接调用预训练库（如 HuggingFace），本项目旨在通过**全流程自研**（从分词算法到底层架构优化），揭示模型在处理真实世界复杂评论数据时的内在逻辑与演进路径。
+这是一个深入探索 Transformer 架构在中文语义理解中应用研究项目。本项目旨在通过**全流程自研**（从分词算法到底层架构优化），研究模型在处理真实世界复杂评论数据时的内在逻辑。
 
 ## 🧪 项目核心愿景
-*   **透视底层细节**：手动实现 Transformer Encoder，理解多头注意力与残差连接的数学本质。
+*   **透视底层细节**：手动实现 Transformer Encoder。
 *   **端到端自主化**：从 Byte Pair Encoding (BPE) 分词器的训练，到基于 MLM 的大规模语料预训练，再到特定领域的下游微调。
 *   **极限性能挑战**：在非预训练大模型背景下，通过策略优化，使仅有 4 层的主干架构在复杂中文数据集上达到 **91.25%** 的工业级准确率。
 
@@ -16,7 +16,7 @@
 
 ### Phase 2: 分词进化 (BPE Integration)
 引入自研 **BPETokenizer**。
-*   **权衡分析**：在 5000 词表与 8000 词表之间进行了多次消融实验。结论显示，针对 6 万条数据，5000 词表的 Embedding 密度更高，过拟合风险更低，能够更好地平衡泛化能力与语义表达。
+*   **权衡分析**：在 5000 词表与 8000 词表之间进行了多次实验。结论显示，针对 6 万条数据，5000 词表的 Embedding 密度更高，过拟合风险更低，能够更好地平衡泛化能力与语义表达。
 
 ### Phase 3: 架构升级 (BERT-style Implementation)
 为了冲击 91%+ 的性能瓶颈，进行了三大硬核改动：
@@ -29,7 +29,7 @@
 ## 📊 技术细节深挖 (Technical Deep-Dive)
 
 ### 1. 差分学习率策略 (Discriminative Fine-tuning)
-虽然我们的 Encoder 是自研预训练的，但为了保护模型已具备的通用语义，我们对不同层应用了“温差学习”：
+虽然 Encoder 是自研预训练的，但为了保护模型已具备的通用语义，对不同层应用了“温差学习”：
 *   **Encoder LR**: `1e-5` (保护特征提取能力)
 *   **Classification Head LR**: `1e-4` (加速下游任务适配)
 
@@ -56,16 +56,8 @@ pip install torch pandas numpy tqdm
 
 ### 生产流水线
 1.  **预训练基石**：`python pretrain.py` (获取具备语义常识的 Encoder)
-2.  **情感对齐**：`python finetune.py` (获取 SWA 加持的最强分类模型)
+2.  **情感对齐**：`python finetune.py` (获取 SWA 加持的分类模型)
 3.  **人机交互测试**：`python predict_finetuned.py`
-
----
-
-## 📈 后续研究路线图 (Future Roadmap)
-
-*   [ ] **知识蒸馏 (Knowledge Distillation)**：利用 BERT-base 作为教师模型，引导本项目的轻量化模型达到 95% 准确率。
-*   [ ] **Bad Case 可视化分析**：通过 Attention Map 透视模型为何在特定反讽句中发生判断偏向。
-*   [ ] **量化部署**：优化模型权重，使其在树莓派 3B+ 等边缘设备上实现实时推断。
 
 ---
 ## 📄 License
