@@ -60,6 +60,20 @@ pip install torch pandas numpy tqdm
 3.  **人机交互测试**：`python predict_finetuned.py`（非自己训练请从 Releases 页面下载预训练好的权重，并放至项目根目录下）
 
 ---
+
+## 📽️ 模型部署 (Deployment)
+
+本项目支持将训练好的 PyTorch 模型导出为 **TorchScript** 格式。
+
+### 1. 导出模型
+运行以下脚本，将 `best_model_finetuned.bin` 转换为静态图：
+```bash
+python export_model.py
+```
+这会生成 `model_torchscript.pt`。
+
+---
 ## 📄 License
 MIT License. 欢迎在该项目基础上进行二次实验与学术研究。
+
 
