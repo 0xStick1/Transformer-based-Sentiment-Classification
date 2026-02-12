@@ -89,6 +89,8 @@ def main():
     
     print("Model loaded. Enter text to classify (or 'q' to quit).")
     
+    CONFIDENCE_THRESHOLD = 0.75  # Threshold for "certainty"
+    
     while True:
         text = input("Text: ")
         if text.lower() == 'q':
@@ -96,7 +98,11 @@ def main():
             
         sentiment, confidence = predict(text, model, tokenizer)
         
-        label = "Positive" if sentiment == 1 else "Negative"
+        # Refined output logic for human-readability
+        if confidence >= CONFIDENCE_THRESHOLD:
+            label = "Positive" if sentiment == 1 else "Negative"
+        else:
+            label = "Weakly Positive" if sentiment == 1 else "Weakly Negative"
         
         print(f"Prediction: {label} (Confidence: {confidence:.4f})")
 
