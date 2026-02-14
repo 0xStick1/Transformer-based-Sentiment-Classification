@@ -17,7 +17,7 @@ import random
 
 # Configuration
 BATCH_SIZE = 64
-EPOCHS = 35 # Slightly more for SWA
+EPOCHS = 60 # Marathon fine-tuning
 LEARNING_RATE_ENCODER = 1e-5
 LEARNING_RATE_HEAD = 1e-4
 MAX_LEN = 128
@@ -25,7 +25,7 @@ D_MODEL = 512
 NUM_HEADS = 8
 NUM_LAYERS = 4
 D_FF = 2048
-DATA_FILE = 'online_shopping_10_cats.csv'
+DATA_FILE = 'merged_sentiment_data.csv'
 VOCAB_FILE = 'vocab_bpe.json'
 PRETRAINED_ENCODER = 'pretrained_encoder.bin'
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -153,7 +153,7 @@ def main():
     # SWA averages weights over the final training trajectory, which provides 
     # significant gains in generalization and stabilizes validation performance.
     swa_model = AveragedModel(model)
-    swa_start = 25 # Trigger SWA averaging after initial convergence
+    swa_start = 40 # Trigger SWA averaging after initial convergence on 193k data
     swa_scheduler = SWALR(optimizer, swa_lr=LEARNING_RATE_ENCODER)
     
     # Cosine scheduler for the pre-SWA phase to maintain smooth descent

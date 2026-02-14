@@ -9,17 +9,18 @@ from tqdm import tqdm
 import random
 from torch.optim.lr_scheduler import LambdaLR
 import math
+import re
 
 # Configuration
 BATCH_SIZE = 64
-EPOCHS = 50  # Increased for better semantic understanding
+EPOCHS = 100  # Marathon pre-training for deep semantic understanding
 LEARNING_RATE = 5e-5
 MAX_LEN = 128
 D_MODEL = 512
 NUM_HEADS = 8
 NUM_LAYERS = 4
 D_FF = 2048  # 4x D_MODEL
-DATA_FILE = 'online_shopping_10_cats.csv'
+DATA_FILE = 'merged_sentiment_data.csv'
 VOCAB_FILE = 'vocab_bpe.json'
 MASK_PROB = 0.15
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,50 +33,94 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed_all(42)
 
 class MLMDataset(Dataset):
-    """Dataset for Masked Language Modeling"""
+    """
+    Dataset for Masked Language Modeling with Whole Word Masking (WWM).
+    WWM is particularly effective for Chinese, as it prevents the model from 
+    guessing a missing character simply by looking at its immediate neighbor 
+    within the same word.
+    """
     def __init__(self, texts, tokenizer, max_len=128, mask_prob=0.15):
         self.texts = texts
         self.tokenizer = tokenizer
         self.max_len = max_len
         self.mask_prob = mask_prob
-        self.mask_token_id = tokenizer.unk_token_id  # Use UNK as MASK
+        self.mask_token_id = tokenizer.unk_token_id  # Use UNK as MASK for this scratch implementation
         
+    def _get_word_groups(self, text):
+        """
+        Heuristic-based Chinese word segmentation for WWM.
+        Groups contiguous Chinese characters or alphanumeric sequences.
+        """
+        # Regex to segment text into word-like chunks (Chinese spans, alphanumeric spans, or punctuation)
+        words = re.findall(r'[\u4e00-\u9fa5]+|[a-zA-Z0-9]+|[^\u4e00-\u9fa5a-zA-Z0-9]', text)
+        
+        token_groups = []
+        for word in words:
+            # Tokenize each word chunk separately using the BPE merges
+            word_tokens = self.tokenizer._apply_merges(word)
+            word_ids = [self.tokenizer.vocab.get(t, self.tokenizer.unk_token_id) for t in word_tokens]
+            if word_ids:
+                token_groups.append(word_ids)
+        return token_groups
+
     def __len__(self):
         return len(self.texts)
     
     def __getitem__(self, idx):
-        text = str(self.texts[idx])
+        text = str(self.texts[idx]).strip()
         
-        # Encode
-        encoding = self.tokenizer(
-            text,
-            max_length=self.max_len,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
+        # 1. Segment text into word groups to support WWM
+        word_groups = self._get_word_groups(text)
         
-        input_ids = encoding['input_ids'].squeeze(0)
-        attention_mask = encoding['attention_mask'].squeeze(0)
+        # 2. Flatten groups into a single sequence while tracking grouping
+        input_ids = []
+        group_map = [] # Tracks which tokens belong to which word group
         
-        # Create labels (same as input_ids)
+        for group_idx, group in enumerate(word_groups):
+            for token_id in group:
+                input_ids.append(token_id)
+                group_map.append(group_idx)
+        
+        # 3. Truncation and Padding (Dynamic)
+        input_ids = input_ids[:self.max_len]
+        group_map = group_map[:self.max_len]
+        
+        attention_mask = [1] * len(input_ids)
+        if len(input_ids) < self.max_len:
+            pad_len = self.max_len - len(input_ids)
+            input_ids += [self.tokenizer.pad_token_id] * pad_len
+            group_map += [-1] * pad_len # -1 for padding positions
+            attention_mask += [0] * pad_len
+            
+        input_ids = torch.tensor(input_ids)
+        attention_mask = torch.tensor(attention_mask)
         labels = input_ids.clone()
         
-        # Mask random tokens
-        probability_matrix = torch.rand(input_ids.shape)
+        # 4. Whole Word Masking Logic (Dynamic per call)
+        # Identify unique word groups (excluding padding)
+        unique_groups = list(set([g for g in group_map if g != -1]))
         
-        # Don't mask PAD tokens
-        special_tokens_mask = (input_ids == self.tokenizer.pad_token_id)
-        probability_matrix.masked_fill_(special_tokens_mask, 0.0)
+        # Decide which groups to mask (15% probability)
+        masked_group_indices = [g for g in unique_groups if random.random() < self.mask_prob]
         
-        # Mask tokens with MASK_PROB probability
-        masked_indices = probability_matrix < self.mask_prob
+        # Apply masks to all tokens in the selected groups
+        masked_any = False
+        for i, g_idx in enumerate(group_map):
+            if g_idx in masked_group_indices:
+                input_ids[i] = self.mask_token_id
+                masked_any = True
+            else:
+                labels[i] = -100 # Ignore in loss
         
-        # Set labels to -100 for non-masked tokens (ignore in loss)
-        labels[~masked_indices] = -100
-        
-        # Replace masked tokens with MASK token
-        input_ids[masked_indices] = self.mask_token_id
+        # Edge case: if no tokens were masked, randomly mask at least one non-special token
+        if not masked_any and len(unique_groups) > 0:
+            rand_group = random.choice(unique_groups)
+            for i, g_idx in enumerate(group_map):
+                if g_idx == rand_group:
+                    input_ids[i] = self.mask_token_id
+                    labels[i] = input_ids[i] # Original ID for prediction
+                else:
+                    labels[i] = -100
         
         return {
             'input_ids': input_ids,
