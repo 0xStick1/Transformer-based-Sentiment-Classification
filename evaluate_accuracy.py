@@ -10,7 +10,7 @@ import numpy as np
 # Configuration
 MODEL_PATH = 'best_model_finetuned.bin'
 VOCAB_FILE = 'vocab_bpe.json'
-DATA_FILE = 'online_shopping_10_cats.csv'
+DATA_FILE = 'merged_sentiment_data.csv'
 MAX_LEN = 128
 BATCH_SIZE = 64
 D_MODEL = 512
