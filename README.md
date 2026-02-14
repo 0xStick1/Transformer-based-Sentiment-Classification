@@ -1,63 +1,68 @@
 # Transformer-based Chinese Sentiment Classification (From Scratch) 🚀
 
-这是一个探索 Transformer 架构在中文语义理解中应用研究项目（二分判断情绪积极 or 消极）。本项目旨在通过**全流程自研**（从分词算法到底层架构优化），研究模型在处理真实世界复杂评论数据时的内在逻辑。
+这是一个深度探索 Transformer 架构在中文语义理解中应用的研究项目（判断句子情绪积极 or 消极）。本项目坚持**全流程自研**（从分词算法、模型架构到训练策略），在不依赖任何外部预训练大模型（如 BERT Base）的情况下，通过极致的策略优化，使仅有 4 层的主干架构在近 20 万规模的真实中文评论数据上达到 **94.62%** 的工业级准确率。
 
 ## 🧪 项目核心愿景
-*   **透视底层细节**：手动实现 Transformer Encoder。
-*   **端到端自主化**：从 Byte Pair Encoding (BPE) 分词器的训练，到基于 MLM 的大规模语料预训练，再到特定领域的下游微调。
-*   **极限性能挑战**：在非预训练大模型背景下，通过策略优化，使仅有 4 层的主干架构在复杂中文数据集上达到 **91.25%** 的工业级准确率。
+*   **全链路透明**：手动实现 Transformer Encoder、Multi-Head Attention 及 Pre-LayerNorm 架构。
+*   **端到端自主化**：自研 BPETokenizer 分词引擎，支持动态掩码与全词掩码 (WWM) 训练。
+*   **性能压榨**：研究在大规模、多领域（购物+外卖+社交）数据集下的模型泛化能力与收敛极限。
 
 ---
 
 ## 🏗️ 架构演进日志 (Architecture Evolution)
 
-### Phase 1: 基础构建 (The Baseline)
-使用简单的字符级分词与 Global Mean Pooling。初步验证了 Transformer 对中文社交语言的适应性，但受限于分词粒度，模型难以捕捉复合词语义。
+### Phase 1-3: 基础与结构升级
+*   **BPE 整合**：引入 5000 词表 BPE 分词，平衡语义表达与参数效率。
+*   **BERT-style**：引入 `[CLS]` 标记作为全句总结符，并采用 **Pre-LayerNorm** 架构确保深层网络训练的稳定性。
+*   **SWA**：通过随机权重平均 (Stochastic Weight Averaging) 平滑模型轨迹，消除指标震荡。
 
-### Phase 2: 分词进化 (BPE Integration)
-引入自研 **BPETokenizer**。
-*   **权衡分析**：在 5000 词表与 8000 词表之间进行了多次实验。结论显示，针对 6 万条数据，5000 词表的 Embedding 密度更高，过拟合风险更低，能够更好地平衡泛化能力与语义表达。
+### Phase 4: MLM 技术 (Advanced Masking)
+*   **Dynamic Masking**：每一轮训练随机更换掩码位置，数据利用率提升 100%。
+*   **Whole Word Masking (WWM)**：自研启发式中文分词算法，强制抠掉整个词组（如“物流快”），迫使模型理解深层语言逻辑。
 
-### Phase 3: 架构升级 (BERT-style Implementation)
-为了冲击 91%+ 的性能瓶颈，进行了三大硬核改动：
-1.  **[CLS] 标记引入**：放弃 Mean Pooling，采用 learnable `[CLS]` 标记作为全句情感总结符，显著提升了模型对重难点情感词的敏感度。
-2.  **Pre-LayerNorm 结构**：遵循现代深层模型（如 GPT-3）的最佳实践。将 Norm 提前至 Attention/FFN 之前。实验证明，这让模型在深度增加到 4 层以上时，训练收敛曲线更加平滑。
-3.  **SWA (Stochastic Weight Averaging)**：在微调末期引入权重平均。通过平均最后 10 个 Epoch 的模型轨迹，成功抹平了验证集的震荡，稳定提升了约 1.5% 的准确率。
-
----
-
-## 📊 技术细节深挖 (Technical Deep-Dive)
-
-### 1. 差分学习率策略 (Discriminative Fine-tuning)
-虽然 Encoder 是自研预训练的，但为了保护模型已具备的通用语义，对不同层应用了“温差学习”：
-*   **Encoder LR**: `1e-5` (保护特征提取能力)
-*   **Classification Head LR**: `1e-4` (加速下游任务适配)
-
-### 2. 多领域数据集
-本项目使用全量 `online_shopping_10_cats` 评论数据。模型需要同时处理书籍、手机、生活用品等 10 个领域的语言风格，对模型的跨领域特征提取能力提出了极高要求。
+### Phase 5: 数据添加 (Add Data)
+*   **规模增加**：整合购物、外卖、微博三大语境，数据量由 6 万升至 **19.3 万**。
+*   **预训练增加**：预训练由原来的 50 轮增加至 100 轮，充分吸收多领域语义。
 
 ---
 
 ## 📂 核心文件
 
-*   `model_scratch.py`: 核心架构定义。实现了 **Pre-Norm** Transformer 块与 **[CLS]** 逻辑。
-*   `tokenizer_bpe.py`: 硬核分词引擎。实现了一种能够处理中文字符偏移的子词合并算法。
-*   `pretrain.py`: MLM 预训练。包括动态权重衰减与 Cosine Warmup 策略。
-*   `finetune.py`: 高级微调引擎。集成了 **SWA** 与差分学习率优化逻辑。
+*   `model_scratch.py`: Transformer 核心架构实现。
+*   `tokenizer_bpe.py`: 自研 BPE 分词引擎。
+*   `merge_data.py`: 数据自动化采集与清洗合体工具。
+*   `pretrain.py`: WWM + 动态掩码预训练引擎。
+*   `finetune.py`: SWA + 差分学习率微调工具。
+*   `predict_finetuned.py`: 推理界面（含置信度过滤）。
 
 ---
 
 ## 🚀 快速上手 (Quick Start)
 
-### 环境配置
+### 1. 环境准备
 ```bash
-pip install torch pandas numpy tqdm
+pip install torch pandas numpy tqdm requests
 ```
 
-### 训练/使用
-1.  **预训练**：`python pretrain.py` (获取具备语义常识的 Encoder)
-2.  **情感微调**：`python finetune.py` (获取 SWA 加持的分类模型)
-3.  **人机交互测试**：`python predict_finetuned.py`（非自己训练请从 Releases 页面下载预训练好的权重，并放至项目根目录下）
+### 2. 下载数据 (19.3 万样本)
+```bash
+python merge_data.py
+```
+
+### 3. 三步走训练流程
+1.  **预训练**：`python pretrain.py`
+2.  **情感微调**：`python finetune.py` (适配二分类任务，建议 60 Epochs)
+3.  **人机交互测试**：`python predict_finetuned.py` (非自己训练请从 Release 下载所需文件)
+
+---
+
+## 📊 性能里程碑 (Benchmarks)
+
+| 训练阶段     | 数据规模 | 核心技术 | 准确率 (Val) |
+|:---------| :--- | :--- | :--- |
+| **基础阶段** | 6.2万 | Mean Pooling | 87.41% |
+| **优化阶段** | 6.2万 | [CLS] + Pre-Norm + SWA | 91.25% |
+| **当前阶段** | **19.3万** | **WWM + Marathon Pretrain** | **94.62%** |
 
 ---
 
@@ -65,15 +70,12 @@ pip install torch pandas numpy tqdm
 
 本项目支持将训练好的 PyTorch 模型导出为 **TorchScript** 格式。
 
-### 1. 导出模型
-运行以下脚本，将 `best_model_finetuned.bin` 转换为静态图：
+### 导出模型
 ```bash
 python export_model.py
 ```
-这会生成 `model_torchscript.pt`。
+这会生成 `model_torchscript.pt`，可在无 Python 环境或 C++ 环境中加载。
 
 ---
 ## 📄 License
 MIT License. 欢迎在该项目基础上进行二次实验与学术研究。
-
-
